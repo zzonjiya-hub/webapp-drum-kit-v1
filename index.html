@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a1a2e">
     <title>Drum Kit</title>
     <style>
         * {
@@ -72,17 +76,19 @@
             position: fixed;
             top: 15px;
             right: 15px;
-            width: 44px;
-            height: 44px;
+            width: 50px;
+            height: 50px;
             background: rgba(0, 0, 0, 0.6);
             border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
             transition: background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         
         .fullscreen-btn:hover {
@@ -90,8 +96,8 @@
         }
         
         .fullscreen-btn svg {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             fill: white;
         }
         
@@ -588,30 +594,76 @@
             });
         });
         
-        // 전체화면 기능
+        // 전체화면 기능 (모바일/태블릿 호환성 개선)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         
-        fullscreenBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    document.documentElement.webkitRequestFullscreen();
-                }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                }
-            }
-        });
+        function getFullscreenElement() {
+            return document.fullscreenElement || 
+                   document.webkitFullscreenElement || 
+                   document.mozFullScreenElement ||
+                   document.msFullscreenElement;
+        }
         
+        function requestFullscreen(element) {
+            if (element.requestFullscreen) {
+                return element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) {
+                return element.webkitRequestFullscreen();
+            } else if (element.webkitEnterFullscreen) {
+                return element.webkitEnterFullscreen();
+            } else if (element.mozRequestFullScreen) {
+                return element.mozRequestFullScreen();
+            } else if (element.msRequestFullscreen) {
+                return element.msRequestFullscreen();
+            }
+            return Promise.reject('Fullscreen not supported');
+        }
+        
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                return document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                return document.webkitExitFullscreen();
+            } else if (document.webkitCancelFullScreen) {
+                return document.webkitCancelFullScreen();
+            } else if (document.mozCancelFullScreen) {
+                return document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                return document.msExitFullscreen();
+            }
+            return Promise.reject('Exit fullscreen not supported');
+        }
+        
+        function toggleFullscreen() {
+            if (!getFullscreenElement()) {
+                requestFullscreen(document.documentElement).catch(err => {
+                    // iOS Safari는 전체화면 API를 지원하지 않음
+                    // 대신 주소창을 숨기는 스크롤 트릭 사용
+                    window.scrollTo(0, 1);
+                    alert('이 브라우저에서는 전체화면이 지원되지 않습니다.\n\n아이패드/아이폰: Safari에서 "홈 화면에 추가"를 사용하면 전체화면으로 실행됩니다.\n\n안드로이드: Chrome 메뉴에서 "홈 화면에 추가"를 사용하세요.');
+                });
+            } else {
+                exitFullscreen().catch(err => {
+                    console.log('Exit fullscreen error:', err);
+                });
+            }
+        }
+        
+        // 클릭과 터치 이벤트 모두 지원
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+        fullscreenBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            toggleFullscreen();
+        }, { passive: false });
+        
+        // 전체화면 상태 변경 감지
         document.addEventListener('fullscreenchange', updateFullscreenButton);
         document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+        document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+        document.addEventListener('MSFullscreenChange', updateFullscreenButton);
         
         function updateFullscreenButton() {
-            if (document.fullscreenElement || document.webkitFullscreenElement) {
+            if (getFullscreenElement()) {
                 fullscreenBtn.classList.add('is-fullscreen');
             } else {
                 fullscreenBtn.classList.remove('is-fullscreen');
