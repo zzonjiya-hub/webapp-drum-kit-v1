@@ -118,7 +118,7 @@
     <div class="container">
         <div class="drum-wrapper" id="drumWrapper">
             <img src="drum.jpg" alt="Drum Kit" class="drum-image" id="drumImage">
-            <svg class="touch-layer" id="touchLayer" viewBox="0 0 1280 800" preserveAspectRatio="none">
+            <svg class="touch-layer" id="touchLayer" viewBox="0 0 1280 720" preserveAspectRatio="none">
                 <defs>
                     <!-- 심벌즈/하이햇용 노란색 그라데이션 -->
                     <radialGradient id="cymbalGradient">
@@ -132,37 +132,37 @@
                     </radialGradient>
                 </defs>
                 
-                <!-- 크래시 심벌즈 (왼쪽 상단) - 오른쪽으로 더 크게 -->
+                <!-- 크래시 심벌즈 - 위아래 5% 크게 -->
                 <ellipse id="crash" class="drum-zone cymbal" data-drum="crash"
-                    cx="135" cy="130" rx="215" ry="110"/>
+                    cx="195" cy="120" rx="185" ry="91"/>
                 
-                <!-- 하이-햇 (왼쪽 중간) - 오른쪽으로 이동 -->
+                <!-- 하이-햇 - 변경 없음 -->
                 <ellipse id="hihat" class="drum-zone cymbal" data-drum="hihat"
-                    cx="165" cy="365" rx="175" ry="90"/>
+                    cx="210" cy="335" rx="150" ry="86"/>
                 
-                <!-- 스네어 드럼 (왼쪽 하단) - 오른쪽으로 더 크게 -->
+                <!-- 스네어 드럼 - 아래쪽 3% 줄임 -->
                 <ellipse id="snare" class="drum-zone drum" data-drum="snare"
-                    cx="255" cy="590" rx="190" ry="110"/>
+                    cx="295" cy="545" rx="165" ry="116"/>
                 
-                <!-- 하이탐 (중앙 상단 왼쪽) - 아래로 이동 -->
+                <!-- 하이탐 - 변경 없음 -->
                 <ellipse id="hitom" class="drum-zone drum" data-drum="hitom"
-                    cx="478" cy="245" rx="130" ry="115"/>
+                    cx="490" cy="225" rx="112" ry="97"/>
                 
-                <!-- 미드탐 (중앙 상단 오른쪽) - 아래로 이동 -->
+                <!-- 미드탐 - 변경 없음 -->
                 <ellipse id="midtom" class="drum-zone drum" data-drum="midtom"
-                    cx="785" cy="245" rx="130" ry="115"/>
+                    cx="780" cy="210" rx="115" ry="100"/>
                 
-                <!-- 베이스 드럼 (중앙) - 아래쪽 기준, 세로 줄임 -->
+                <!-- 베이스 드럼 - 변경 없음 -->
                 <ellipse id="bass" class="drum-zone drum" data-drum="bass"
-                    cx="640" cy="640" rx="185" ry="155"/>
+                    cx="630" cy="560" rx="165" ry="150"/>
                 
-                <!-- 라이드 심벌즈 (오른쪽 상단) - 아래로 이동, 더 크게 -->
+                <!-- 라이드 심벌즈 - 변경 없음 -->
                 <ellipse id="ride" class="drum-zone cymbal" data-drum="ride"
-                    cx="1145" cy="170" rx="215" ry="160"/>
+                    cx="1150" cy="145" rx="245" ry="143"/>
                 
-                <!-- 로우탐 (오른쪽) - 오른쪽, 아래로 이동 -->
+                <!-- 로우탐 - 왼쪽 3% 줄임 -->
                 <ellipse id="lowtom" class="drum-zone drum" data-drum="lowtom"
-                    cx="1045" cy="575" rx="215" ry="130"/>
+                    cx="990" cy="520" rx="188" ry="125"/>
             </svg>
         </div>
     </div>
@@ -183,7 +183,7 @@
         const drumWrapper = document.getElementById('drumWrapper');
         
         const IMG_WIDTH = 1280;
-        const IMG_HEIGHT = 800;
+        const IMG_HEIGHT = 720;
         const IMG_RATIO = IMG_WIDTH / IMG_HEIGHT;
         
         function resizeDrum() {
@@ -259,7 +259,7 @@
                 gain2.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
                 
                 const masterGain = audioContext.createGain();
-                masterGain.gain.value = 1.8;
+                masterGain.gain.value = 2.7;
                 
                 osc.connect(gain);
                 osc2.connect(gain2);
@@ -498,7 +498,7 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
                 
                 const masterGain = audioContext.createGain();
-                masterGain.gain.value = 1.5;
+                masterGain.gain.value = 2.25;
                 
                 osc.connect(gain);
                 gain.connect(masterGain);
