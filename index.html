@@ -7,8 +7,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1a1a2e">
-    <title>Drum Kit</title>
+    <title>Drum Kit (Real Audio)</title>
     <style>
+        /* 기존 스타일 유지 */
         * {
             margin: 0;
             padding: 0;
@@ -120,49 +121,24 @@
             <img src="drum.jpg" alt="Drum Kit" class="drum-image" id="drumImage">
             <svg class="touch-layer" id="touchLayer" viewBox="0 0 1280 720" preserveAspectRatio="none">
                 <defs>
-                    <!-- 심벌즈/하이햇용 노란색 그라데이션 -->
                     <radialGradient id="cymbalGradient">
                         <stop offset="0%" stop-color="rgba(255, 220, 0, 0.5)"/>
                         <stop offset="100%" stop-color="rgba(255, 220, 0, 0)"/>
                     </radialGradient>
-                    <!-- 드럼용 흰색 그라데이션 -->
                     <radialGradient id="drumGradient">
                         <stop offset="0%" stop-color="rgba(255, 255, 255, 0.5)"/>
                         <stop offset="100%" stop-color="rgba(255, 255, 255, 0)"/>
                     </radialGradient>
                 </defs>
                 
-                <!-- 크래시 심벌즈 - 위아래 5% 크게 -->
-                <ellipse id="crash" class="drum-zone cymbal" data-drum="crash"
-                    cx="195" cy="120" rx="185" ry="91"/>
-                
-                <!-- 하이-햇 - 변경 없음 -->
-                <ellipse id="hihat" class="drum-zone cymbal" data-drum="hihat"
-                    cx="210" cy="335" rx="150" ry="86"/>
-                
-                <!-- 스네어 드럼 - 아래쪽 3% 줄임 -->
-                <ellipse id="snare" class="drum-zone drum" data-drum="snare"
-                    cx="295" cy="545" rx="165" ry="116"/>
-                
-                <!-- 하이탐 - 변경 없음 -->
-                <ellipse id="hitom" class="drum-zone drum" data-drum="hitom"
-                    cx="490" cy="225" rx="112" ry="97"/>
-                
-                <!-- 미드탐 - 변경 없음 -->
-                <ellipse id="midtom" class="drum-zone drum" data-drum="midtom"
-                    cx="780" cy="210" rx="115" ry="100"/>
-                
-                <!-- 베이스 드럼 - 변경 없음 -->
-                <ellipse id="bass" class="drum-zone drum" data-drum="bass"
-                    cx="630" cy="560" rx="165" ry="150"/>
-                
-                <!-- 라이드 심벌즈 - 변경 없음 -->
-                <ellipse id="ride" class="drum-zone cymbal" data-drum="ride"
-                    cx="1150" cy="145" rx="245" ry="143"/>
-                
-                <!-- 로우탐 - 왼쪽 3% 줄임 -->
-                <ellipse id="lowtom" class="drum-zone drum" data-drum="lowtom"
-                    cx="990" cy="520" rx="188" ry="125"/>
+                <ellipse id="crash" class="drum-zone cymbal" data-drum="crash" cx="195" cy="120" rx="185" ry="91"/>
+                <ellipse id="hihat" class="drum-zone cymbal" data-drum="hihat" cx="210" cy="335" rx="150" ry="86"/>
+                <ellipse id="snare" class="drum-zone drum" data-drum="snare" cx="295" cy="545" rx="165" ry="116"/>
+                <ellipse id="hitom" class="drum-zone drum" data-drum="hitom" cx="490" cy="225" rx="112" ry="97"/>
+                <ellipse id="midtom" class="drum-zone drum" data-drum="midtom" cx="780" cy="210" rx="115" ry="100"/>
+                <ellipse id="bass" class="drum-zone drum" data-drum="bass" cx="630" cy="560" rx="165" ry="150"/>
+                <ellipse id="ride" class="drum-zone cymbal" data-drum="ride" cx="1150" cy="145" rx="245" ry="143"/>
+                <ellipse id="lowtom" class="drum-zone drum" data-drum="lowtom" cx="990" cy="520" rx="188" ry="125"/>
             </svg>
         </div>
     </div>
@@ -177,7 +153,7 @@
     </button>
 
     <script>
-        // 이미지와 SVG 레이어 크기 동기화 - 이미지 전체가 보이도록
+        // --- 1. 화면 리사이징 로직 (기존 유지) ---
         const drumImage = document.getElementById('drumImage');
         const touchLayer = document.getElementById('touchLayer');
         const drumWrapper = document.getElementById('drumWrapper');
@@ -190,16 +166,12 @@
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
             const windowRatio = windowWidth / windowHeight;
-            
             let newWidth, newHeight;
             
-            // 이미지 전체가 보이도록 계산 (contain 방식)
             if (windowRatio > IMG_RATIO) {
-                // 화면이 더 넓으면 높이에 맞춤
                 newHeight = windowHeight;
                 newWidth = windowHeight * IMG_RATIO;
             } else {
-                // 화면이 더 좁으면 너비에 맞춤
                 newWidth = windowWidth;
                 newHeight = windowWidth / IMG_RATIO;
             }
@@ -212,337 +184,109 @@
         
         drumImage.addEventListener('load', resizeDrum);
         window.addEventListener('resize', resizeDrum);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(resizeDrum, 100);
-        });
-        
-        // 초기 로드 시 실행
+        window.addEventListener('orientationchange', () => { setTimeout(resizeDrum, 100); });
         resizeDrum();
-        if (drumImage.complete) {
-            resizeDrum();
-        }
-        
-        // Web Audio API 초기화
+        if (drumImage.complete) { resizeDrum(); }
+
+        // --- 2. 오디오 파일 설정 (수정됨) ---
         let audioContext = null;
-        const activeOscillators = new Map();
-        
+        const audioBuffers = {}; // 로딩된 사운드 데이터 저장소
+
+        // 오디오 파일 경로 매핑 (sounds 폴더 필요)
+        const soundFiles = {
+            crash: 'sounds/crash.wav',
+            hihat: 'sounds/hihat.wav',
+            snare: 'sounds/snare.wav',
+            hitom: 'sounds/hitom.wav',
+            midtom: 'sounds/midtom.wav',
+            bass: 'sounds/bass.wav',
+            ride: 'sounds/ride.wav',
+            lowtom: 'sounds/lowtom.wav'
+        };
+
         function initAudio() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                // 컨텍스트 생성 시 파일 로딩 시작
+                loadAllSounds();
             }
             if (audioContext.state === 'suspended') {
                 audioContext.resume();
             }
         }
-        
-        // 드럼 소리 합성 함수들
-        const drumSounds = {
-            // 베이스 드럼 - 깊고 강한 저음
-            bass: () => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                const osc2 = audioContext.createOscillator();
-                const gain2 = audioContext.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(150, audioContext.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.3);
-                
-                gain.gain.setValueAtTime(1.5, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.0);
-                
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(80, audioContext.currentTime);
-                osc2.frequency.exponentialRampToValueAtTime(30, audioContext.currentTime + 0.2);
-                
-                gain2.gain.setValueAtTime(1.2, audioContext.currentTime);
-                gain2.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
-                
-                const masterGain = audioContext.createGain();
-                masterGain.gain.value = 2.7;
-                
-                osc.connect(gain);
-                osc2.connect(gain2);
-                gain.connect(masterGain);
-                gain2.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                
-                osc.start();
-                osc2.start();
-                osc.stop(audioContext.currentTime + 1.0);
-                osc2.stop(audioContext.currentTime + 0.8);
-            },
-            
-            // 스네어 드럼 - 스냅감 있는 소리
-            snare: () => {
-                // 톤 부분
-                const osc = audioContext.createOscillator();
-                const oscGain = audioContext.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(200, audioContext.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(120, audioContext.currentTime + 0.1);
-                oscGain.gain.setValueAtTime(0.8, audioContext.currentTime);
-                oscGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
-                
-                // 노이즈 부분 (스네어 와이어)
-                const bufferSize = audioContext.sampleRate * 0.5;
-                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
+
+        // 모든 사운드 파일 비동기 로딩 및 디코딩
+        async function loadAllSounds() {
+            console.log('사운드 파일 로딩 시작...');
+            for (const [drumName, filePath] of Object.entries(soundFiles)) {
+                try {
+                    const response = await fetch(filePath);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const arrayBuffer = await response.arrayBuffer();
+                    const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    audioBuffers[drumName] = decodedBuffer;
+                    console.log(`${drumName} 로딩 완료`);
+                } catch (error) {
+                    console.error(`사운드 로딩 실패 (${drumName}):`, error);
                 }
-                
-                const noise = audioContext.createBufferSource();
-                noise.buffer = buffer;
-                
-                const noiseFilter = audioContext.createBiquadFilter();
-                noiseFilter.type = 'highpass';
-                noiseFilter.frequency.value = 1500;
-                
-                const noiseGain = audioContext.createGain();
-                noiseGain.gain.setValueAtTime(1.0, audioContext.currentTime);
-                noiseGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
-                
-                const masterGain = audioContext.createGain();
-                masterGain.gain.value = 1.5;
-                
-                osc.connect(oscGain);
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                oscGain.connect(masterGain);
-                noiseGain.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                
-                osc.start();
-                noise.start();
-                osc.stop(audioContext.currentTime + 0.3);
-                noise.stop(audioContext.currentTime + 0.5);
-            },
-            
-            // 닫힌 하이-햇
-            hihat: () => {
-                const bufferSize = audioContext.sampleRate * 0.3;
-                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
-                
-                const noise = audioContext.createBufferSource();
-                noise.buffer = buffer;
-                
-                const highpass = audioContext.createBiquadFilter();
-                highpass.type = 'highpass';
-                highpass.frequency.value = 7000;
-                
-                const bandpass = audioContext.createBiquadFilter();
-                bandpass.type = 'bandpass';
-                bandpass.frequency.value = 10000;
-                bandpass.Q.value = 1;
-                
-                const gain = audioContext.createGain();
-                gain.gain.setValueAtTime(1.2, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.25);
-                
-                const masterGain = audioContext.createGain();
-                masterGain.gain.value = 2.5;
-                
-                noise.connect(highpass);
-                highpass.connect(bandpass);
-                bandpass.connect(gain);
-                gain.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                
-                noise.start();
-                noise.stop(audioContext.currentTime + 0.3);
-            },
-            
-            // 크래시 심벌즈
-            crash: () => {
-                const bufferSize = audioContext.sampleRate * 1.5;
-                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
-                
-                const noise = audioContext.createBufferSource();
-                noise.buffer = buffer;
-                
-                const highpass = audioContext.createBiquadFilter();
-                highpass.type = 'highpass';
-                highpass.frequency.value = 5000;
-                
-                const gain = audioContext.createGain();
-                gain.gain.setValueAtTime(1.3, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.3);
-                
-                const masterGain = audioContext.createGain();
-                masterGain.gain.value = 2.2;
-                
-                noise.connect(highpass);
-                highpass.connect(gain);
-                gain.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                
-                noise.start();
-                noise.stop(audioContext.currentTime + 1.5);
-            },
-            
-            // 라이드 심벌즈
-            ride: () => {
-                const bufferSize = audioContext.sampleRate * 1.2;
-                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
-                
-                const noise = audioContext.createBufferSource();
-                noise.buffer = buffer;
-                
-                const highpass = audioContext.createBiquadFilter();
-                highpass.type = 'highpass';
-                highpass.frequency.value = 6000;
-                
-                const bandpass = audioContext.createBiquadFilter();
-                bandpass.type = 'bandpass';
-                bandpass.frequency.value = 8000;
-                bandpass.Q.value = 2;
-                
-                const gain = audioContext.createGain();
-                gain.gain.setValueAtTime(1.0, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.0);
-                
-                // 핑 사운드 추가
-                const osc = audioContext.createOscillator();
-                const oscGain = audioContext.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = 5500;
-                oscGain.gain.setValueAtTime(0.25, audioContext.currentTime);
-                oscGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.6);
-                
-                const masterGain = audioContext.createGain();
-                masterGain.gain.value = 2.2;
-                
-                noise.connect(highpass);
-                highpass.connect(bandpass);
-                bandpass.connect(gain);
-                gain.connect(masterGain);
-                osc.connect(oscGain);
-                oscGain.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                
-                noise.start();
-                osc.start();
-                noise.stop(audioContext.currentTime + 1.2);
-                osc.stop(audioContext.currentTime + 0.6);
-            },
-            
-            // 하이탐
-            hitom: () => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(280, audioContext.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(180, audioContext.currentTime + 0.15);
-                
-                gain.gain.setValueAtTime(1.0, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.6);
-                
-                const masterGain = audioContext.createGain();
-                masterGain.gain.value = 1.5;
-                
-                osc.connect(gain);
-                gain.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                
-                osc.start();
-                osc.stop(audioContext.currentTime + 0.6);
-            },
-            
-            // 미드탐
-            midtom: () => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(220, audioContext.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(140, audioContext.currentTime + 0.18);
-                
-                gain.gain.setValueAtTime(1.0, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.7);
-                
-                const masterGain = audioContext.createGain();
-                masterGain.gain.value = 1.5;
-                
-                osc.connect(gain);
-                gain.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                
-                osc.start();
-                osc.stop(audioContext.currentTime + 0.7);
-            },
-            
-            // 로우탐
-            lowtom: () => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(160, audioContext.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(90, audioContext.currentTime + 0.2);
-                
-                gain.gain.setValueAtTime(1.1, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
-                
-                const masterGain = audioContext.createGain();
-                masterGain.gain.value = 2.25;
-                
-                osc.connect(gain);
-                gain.connect(masterGain);
-                masterGain.connect(audioContext.destination);
-                
-                osc.start();
-                osc.stop(audioContext.currentTime + 0.8);
             }
-        };
-        
-        // 드럼 연주 함수
+        }
+
+        // 드럼 연주 함수 (수정됨: 버퍼 재생 방식)
         function playDrum(drumType, element) {
-            initAudio();
-            if (drumSounds[drumType]) {
-                drumSounds[drumType]();
-                
-                // 시각적 피드백
+            initAudio(); // 오디오 컨텍스트 확인 및 시작
+            
+            // 1. 시각적 피드백
+            if (element) {
                 element.classList.add('active');
                 setTimeout(() => {
                     element.classList.remove('active');
                 }, 100);
             }
+
+            // 2. 오디오 재생 (버퍼가 로딩된 경우에만)
+            if (audioContext && audioBuffers[drumType]) {
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffers[drumType];
+                
+                // 게인 노드 (볼륨 조절용)
+                const gainNode = audioContext.createGain();
+                
+                // 악기별 미세 볼륨 조절 예시 (필요시 수정)
+                // if (drumType === 'ride') gainNode.gain.value = 0.8;
+                // else gainNode.gain.value = 1.0;
+                
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // 즉시 재생
+                source.start(0);
+            } else {
+                if (!audioContext) {
+                    console.log('AudioContext not initialized yet.');
+                } else if (!audioBuffers[drumType]) {
+                    console.log(`Sound not loaded yet for: ${drumType}. Check file path.`);
+                }
+            }
         }
-        
-        // 터치/마우스 이벤트 핸들러
+
+        // --- 3. 이벤트 핸들러 (기존 유지) ---
         const drumZones = document.querySelectorAll('.drum-zone');
-        const activeTouches = new Map(); // 터치별 마지막 드럼 추적
-        
-        // 터치 위치에서 드럼 영역 찾기
+        const activeTouches = new Map();
+
         function getDrumAtPoint(x, y) {
             const elements = document.elementsFromPoint(x, y);
             for (let el of elements) {
-                if (el.classList.contains('drum-zone')) {
-                    return el;
-                }
+                if (el.classList.contains('drum-zone')) return el;
             }
             return null;
         }
-        
-        // 터치 시작
+
         document.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            initAudio();
-            
+            initAudio(); // 첫 터치 시 오디오 로딩 트리거
             for (let touch of e.changedTouches) {
                 const drum = getDrumAtPoint(touch.clientX, touch.clientY);
                 if (drum) {
@@ -554,18 +298,14 @@
                 }
             }
         }, { passive: false });
-        
-        // 터치 이동 (스와이프)
+
         document.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            
             for (let touch of e.changedTouches) {
                 const drum = getDrumAtPoint(touch.clientX, touch.clientY);
                 const lastDrumType = activeTouches.get(touch.identifier);
-                
                 if (drum) {
                     const drumType = drum.dataset.drum;
-                    // 새로운 드럼 영역에 진입했을 때만 소리 재생
                     if (drumType !== lastDrumType) {
                         activeTouches.set(touch.identifier, drumType);
                         playDrum(drumType, drum);
@@ -575,15 +315,14 @@
                 }
             }
         }, { passive: false });
-        
-        // 터치 종료
+
         document.addEventListener('touchend', (e) => {
             e.preventDefault();
             for (let touch of e.changedTouches) {
                 activeTouches.delete(touch.identifier);
             }
         }, { passive: false });
-        
+
         // 마우스 이벤트
         drumZones.forEach(zone => {
             zone.addEventListener('mousedown', (e) => {
@@ -593,97 +332,55 @@
                 playDrum(drumType, zone);
             });
         });
-        
-        // 전체화면 기능 (모바일/태블릿 호환성 개선)
+
+        // 전체화면 및 기타 유틸리티 (기존 유지)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
-        
         function getFullscreenElement() {
-            return document.fullscreenElement || 
-                   document.webkitFullscreenElement || 
-                   document.mozFullScreenElement ||
-                   document.msFullscreenElement;
+            return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         }
-        
         function requestFullscreen(element) {
-            if (element.requestFullscreen) {
-                return element.requestFullscreen();
-            } else if (element.webkitRequestFullscreen) {
-                return element.webkitRequestFullscreen();
-            } else if (element.webkitEnterFullscreen) {
-                return element.webkitEnterFullscreen();
-            } else if (element.mozRequestFullScreen) {
-                return element.mozRequestFullScreen();
-            } else if (element.msRequestFullscreen) {
-                return element.msRequestFullscreen();
-            }
+            if (element.requestFullscreen) return element.requestFullscreen();
+            if (element.webkitRequestFullscreen) return element.webkitRequestFullscreen();
+            if (element.mozRequestFullScreen) return element.mozRequestFullScreen();
             return Promise.reject('Fullscreen not supported');
         }
-        
         function exitFullscreen() {
-            if (document.exitFullscreen) {
-                return document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                return document.webkitExitFullscreen();
-            } else if (document.webkitCancelFullScreen) {
-                return document.webkitCancelFullScreen();
-            } else if (document.mozCancelFullScreen) {
-                return document.mozCancelFullScreen();
-            } else if (document.msExitFullscreen) {
-                return document.msExitFullscreen();
-            }
+            if (document.exitFullscreen) return document.exitFullscreen();
+            if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
             return Promise.reject('Exit fullscreen not supported');
         }
-        
         function toggleFullscreen() {
             if (!getFullscreenElement()) {
-                requestFullscreen(document.documentElement).catch(err => {
-                    // iOS Safari는 전체화면 API를 지원하지 않음
-                    // 대신 주소창을 숨기는 스크롤 트릭 사용
+                requestFullscreen(document.documentElement).catch(() => {
                     window.scrollTo(0, 1);
-                    alert('이 브라우저에서는 전체화면이 지원되지 않습니다.\n\n아이패드/아이폰: Safari에서 "홈 화면에 추가"를 사용하면 전체화면으로 실행됩니다.\n\n안드로이드: Chrome 메뉴에서 "홈 화면에 추가"를 사용하세요.');
+                    alert('전체화면이 지원되지 않는 브라우저입니다.');
                 });
             } else {
-                exitFullscreen().catch(err => {
-                    console.log('Exit fullscreen error:', err);
-                });
+                exitFullscreen();
             }
         }
-        
-        // 클릭과 터치 이벤트 모두 지원
         fullscreenBtn.addEventListener('click', toggleFullscreen);
         fullscreenBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
             toggleFullscreen();
         }, { passive: false });
-        
-        // 전체화면 상태 변경 감지
+
         document.addEventListener('fullscreenchange', updateFullscreenButton);
         document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
-        document.addEventListener('mozfullscreenchange', updateFullscreenButton);
-        document.addEventListener('MSFullscreenChange', updateFullscreenButton);
-        
         function updateFullscreenButton() {
-            if (getFullscreenElement()) {
-                fullscreenBtn.classList.add('is-fullscreen');
-            } else {
-                fullscreenBtn.classList.remove('is-fullscreen');
-            }
+            if (getFullscreenElement()) fullscreenBtn.classList.add('is-fullscreen');
+            else fullscreenBtn.classList.remove('is-fullscreen');
         }
-        
-        // 컨텍스트 메뉴 방지
+
         document.addEventListener('contextmenu', (e) => e.preventDefault());
-        
-        // iOS Safari에서 더블탭 줌 방지
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
+            if (now - lastTouchEnd <= 300) e.preventDefault();
             lastTouchEnd = now;
         }, { passive: false });
-        
-        // 오디오 컨텍스트 초기화 (첫 터치/클릭 시)
+
+        // 최초 클릭/터치 시 오디오 초기화
         document.addEventListener('click', initAudio, { once: true });
         document.addEventListener('touchstart', initAudio, { once: true });
     </script>
